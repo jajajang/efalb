@@ -1,0 +1,2 @@
+nohup: ignoring input
+./running_script.sh: 3: ./running_script.sh: Syntax error: "&" unexpected
