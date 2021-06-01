@@ -1,4 +1,4 @@
-# lrbandit
+# Bilinear bandit e-FALB
 
 This is the code for the paper 'Improved Regret Bounds of Bilinear Bandits using Action Space Dimension Analysis' published in ICML 2021.
 
