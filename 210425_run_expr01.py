@@ -2,7 +2,7 @@
 first experiment for oful vs 2stage
 """
 from myutils3_v2 import *
-from blbandits3 import *
+from blbandits_with_efalb_210425 import *
 import bleval
 from expr01_defs import *
 from types import SimpleNamespace
@@ -49,13 +49,13 @@ opts.R = float(args.R) if (args.R is not None) else 0.05
 opts.dataopts = SimpleNamespace()
 if   args.dataname == 'sphericalgaussian':
     d = int(args.d) if args.d is not None else 16
-    ratio_N_to_d = 2
+    ratio_N_to_d = 4
     opts.dataopts.d1 = d
     opts.dataopts.d2 = d
     opts.dataopts.r = int(args.r) if(args.r is not None) else 2
     opts.dataopts.N1 = ratio_N_to_d*d
     opts.dataopts.N2 = ratio_N_to_d*d
-    opts.dataopts.S_2norm = 1.0
+    opts.dataopts.S_2norm = 0.04
     opts.dataopts.armtype = armtype
     opts.dataopts.R = opts.R
 elif args.dataname == 'movielens':

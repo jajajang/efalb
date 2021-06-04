@@ -1,14 +1,15 @@
 from myutils3_v2 import *
 from expr01_defs import *
 
-prefix = './res-20210205/'
-RRR='R001'
-totaltime='T10000'
+prefix = './res-20210426/'
+RRR='R001_lambda_004'
+totaltime='d24'
 fNameDict = OrderedDict([
     ('bloful'                   , RRR+'/'+totaltime+'/bloful.pkl'),
-    ('bltwostage-sp_simple2'    , RRR+'/'+totaltime+'/bltwostage-sp_simple2.pkl'),
-    ('bltwostage-bm-sp_simple2' , RRR+'/'+totaltime+'/bltwostage-bm-sp_simple2.pkl'),
-    ('bmoracle'                 , RRR+'/'+totaltime+'/bmoracle.pkl'),
+ #   ('bltwostage-sp_simple2'    , RRR+'/'+totaltime+'/bltwostage-sp_simple2.pkl'),
+ #   ('bltwostage-bm-sp_simple2' , RRR+'/'+totaltime+'/bltwostage-bm-sp_simple2.pkl'),
+ #   ('bmoracle'                 , RRR+'/'+totaltime+'/bmoracle.pkl'),
+    ('EFALB'                 , RRR+'/'+totaltime+'/EFALB.pkl'),
 ])
 algoNameList = list(fNameDict.keys())
 
@@ -83,14 +84,15 @@ matplotlib.rcParams.update({'font.size': 18})
 algoNameList
 conversion = {
     'bloful': 'OFUL',
-    'bltwostage-sp_simple2': 'ESTR-OS',
-    'bltwostage-bm-sp_simple2': 'ESTR-BM',
-    'bmoracle': 'rO-UCB',
+  #  'bltwostage-sp_simple2': 'ESTR-OS',
+  #  'bltwostage-bm-sp_simple2': 'ESTR-BM',
+  #  'bmoracle': 'rO-UCB',
+    'EFALB': 'eFALB'
 }
 algoNameListNew = [ conversion[name] for name in algoNameList ]
 
 #colorList = ['red', 'green', 'blue', 'black', 'cyan', 'magenta', 'yellow']
-colorList = ['black','blue', 'red', 'green']
+colorList = ['black','blue', 'red', 'green', 'cyan']
 #
 for (k, plotdata) in enumerate([plotDataMean, plotDataMD]):
     if k == 0: 

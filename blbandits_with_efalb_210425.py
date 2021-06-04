@@ -601,7 +601,177 @@ class BilinearOful(Bandit):
 
     def get_debug_dict(self):
         return self.dbg_dict
+########################################
+class EFALB(Bandit):
+########################################
+    """ this is now heavily modified for graph bandits.. for the original, please use the one in 'expr-nips17-post'
+    Sp: 'S prime', for oful, should be \sqrt(lam) * (2-norm bound on theta)
+        For spectral bandit, should be a bound on ||\\theta||_{V_0}
+    """
+    def __init__(self, X, Z, lam, T, R, Sp, D=None, flags={}, subsample_func=None, subsample_rate=1.0, multiplier=1.0, binaryRewards=False, bArmRemoval=False):
+        """
+        D allows diagonal regularization.
+        Warning: Sp must be set to `sqrt(lam) * S` for OFUL.
+        """
+        self.T = T
+        self.X = X
+        self.Z = Z
+        self.R = R
+        self.lam = lam
+        self.delta = .2
+# 		self.S_frobnorm = S_frobnorm
+# 		self.Sp = np.sqrt(self.lam) * self.S_frobnorm
+        self.Sp = Sp
+        self.flags = flags
+        self.multiplier = float(multiplier)
+        self.binaryRewards = binaryRewards
+        self.bArmRemoval = bArmRemoval
 
+        # more instance variables
+        self.s = 1
+        self.t = 1
+        self.N1, self.d1 = self.X.shape
+        self.N2, self.d2 = self.Z.shape
+
+        # super arms
+        self.N = self.N1 * self.N2
+        self.d = self.d1 * self.d2
+        self.W = np.zeros( (self.N, self.d) )
+        for i in range(self.W.shape[0]):
+            i1, i2 = np.unravel_index(i, (self.N1, self.N2))
+            self.W[i,:] = np.outer(self.X[i1,:], self.Z[i2,:]).ravel()
+
+        #- subsampling aspect (disabled for now)
+        assert subsample_func == None
+        self.subsample_func = None
+
+        self.WTy = np.zeros(self.d)
+
+        self.D = D
+        if (self.D is None):
+            self.Vt = self.lam * np.eye(self.d)
+            self.invVt = np.eye(self.d) / self.lam
+            self.W_invVt_norm_sq = np.sum(self.W * self.W, axis=1) / self.lam
+            self.logdetV = self.d*log(self.lam)
+        else:
+            assert self.lam is None
+            self.Vt = D
+            self.invVt = np.diag(1/np.diag(self.Vt))
+            self.W_invVt_norm_sq = np.sum((self.W*np.diag(self.invVt)) * self.W, axis=1)
+            self.logdetV = np.sum(np.log(np.diag(self.Vt)))
+        self.logdetV0 = self.logdetV
+
+        self.sqrt_beta = calc_sqrt_beta_det4(self.t,self.R,self.lam,self.delta,self.Sp,self.logdetV, self.logdetV0)
+        self.theta_hat = np.zeros(self.d)
+
+        assert bArmRemoval == False # let's implement this later on.
+        self.do_not_ask = []
+        self.dbg_dict = {'multiplier':float(multiplier)}
+        self.cache_valid_idx = np.arange(self.N)
+
+    #@profile
+    def next_arm(self):
+        if (len(self.do_not_ask) == 0):
+            valid_idx = self.cache_valid_idx
+        else:
+            valid_idx = setdiff1d(np.arange(self.N),self.do_not_ask)
+        if (self.t == 1):
+            return (ra.randint(self.N1), ra.randint(self.N2)), np.nan
+        radius_sq = self.multiplier * (self.sqrt_beta)**2
+        if (self.subsample_func == None):
+#            obj_func = np.dot(self.W, self.theta_hat) + np.sqrt(radius_sq) * np.sqrt(self.W_invVt_norm_sq)
+#            A = np.dot(self.W, self.theta_hat)
+            A = (self.X @ self.theta_hat.reshape(self.d1,self.d2) @ self.Z.T).ravel()
+            B = np.sqrt(radius_sq) * np.sqrt(self.W_invVt_norm_sq)
+            obj_func = A + B
+            truth=True
+            while truth:
+                if all(B[valid_idx]<(1/np.sqrt(self.T))):
+                    truth=False
+                    chosen_inner = np.argmax(obj_func[valid_idx])
+                    chosen=valid_idx[chosen_inner]
+                elif all(B[valid_idx]<2**(-self.s)):
+                    borderline=max(obj_func)-2**(1-self.s)
+                    self.cache_valid_idx=np.arange(self.N)[obj_func>borderline]
+                    valid_idx=self.cache_valid_idx
+                    self.s=self.s+1
+                    #self.Vt = self.lam * np.eye(self.d)
+                    #self.invVt = np.eye(self.d) / self.lam
+                    #self.W_invVt_norm_sq = np.sum(self.W * self.W, axis=1) / self.lam
+                    #self.logdetV = self.d*log(self.lam)
+                    #self.theta_hat = np.zeros(self.d)
+                    #self.WTy = np.zeros(self.d)
+                    #chosen_inner = ra.randint(len(valid_idx))
+                    #chosen = valid_idx[chosen_inner]
+                else:
+                    truth=False
+                    chosen_inner = np.argmax(B[valid_idx])
+                    chosen = valid_idx[chosen_inner]
+        else:
+            raise NotImplementedError("use valid_idx")
+
+        chosenPair = np.unravel_index(chosen, (self.N1,self.N2))
+        return chosenPair, radius_sq
+
+    def calc_index(self):
+        """ newly written for `SpectralUCB`
+        """
+        radius_sq = self.multiplier * (self.sqrt_beta)**2
+        obj_func = np.dot(self.W, self.theta_hat) + np.sqrt(radius_sq) * np.sqrt(self.W_invVt_norm_sq)
+        if (self.bArmRemoval):
+            obj_func[self.do_not_ask] = -np.inf
+        return obj_func
+
+    def update(self, pulled_idx_pair, y_t):
+        pulled_idx = np.ravel_multi_index(pulled_idx_pair, (self.N1,self.N2))
+        wt = self.W[pulled_idx, :]
+
+        if (self.binaryRewards):
+            assert (y_t >= 0.0 and y_t <= 1.0)
+            self.WTy += (2*y_t - 1) * wt
+        else:
+            self.WTy += y_t*wt
+        self.Vt += np.outer(wt,wt)
+
+        tempval1 = np.dot(self.invVt, wt)    # d by 1, O(d^2)
+        tempval2 = np.dot(tempval1, wt)      # scalar, O(d)
+        self.logdetV += log(1 + tempval2)
+
+        if (self.t % 100 == 0):
+            self.invVt = la.inv(self.Vt)
+        else:
+#            self.invVt -= np.outer(tempval1, tempval1) / (1 + tempval2)
+            aVec = tempval1 / np.sqrt(1 + tempval2)
+            self.invVt -= np.outer(aVec, aVec)
+
+        if (self.subsample_func == None):
+            # self.W_invVt_norm_sq = mahalanobis_norm_sq_batch(self.W, self.invVt)  # O(Nd^2)
+#            self.W_invVt_norm_sq -= (np.dot(self.W, tempval1) ** 2) / (1 + tempval2) # efficient update, O(Nd)
+            v = (np.dot(self.X, tempval1.reshape(self.d1,self.d2)) @ self.Z.T).ravel()
+            self.W_invVt_norm_sq -= (v ** 2) / (1 + tempval2) # efficient update, O(Nd)
+            pass
+
+        self.theta_hat = np.dot(self.invVt, self.WTy)
+        if (self.bArmRemoval):
+            self.do_not_ask.append( pulled_idx_pair )
+
+        my_t = self.t + 1
+        self.sqrt_beta = calc_sqrt_beta_det4(my_t,self.R,self.lam,self.delta,self.Sp,self.logdetV,self.logdetV0)
+
+        self.t += 1
+
+    def getDoNotAsk(self):
+        return self.do_not_ask
+
+    def predict(self, X=None):
+        raise NotImplementedError()
+        if X is None:
+            X = self.X
+        return X.dot(self.theta_hat)
+
+    def get_debug_dict(self):
+        return self.dbg_dict
+########################################
 ########################################
 class BMOracle(Bandit):
 ########################################
@@ -750,10 +920,11 @@ class BMOracle(Bandit):
 
         #############################self.theta_hat = np.dot(self.invVt, self.WTy)
         from matrixrecovery import rankone_modif
-        U, V, out_nIter, stat = rankone_modif(self.myX, self.myZ, self.myRewards, self.r, self.cheatU, self.cheatV, self.R)
-        self.theta_hat=(U@V.T).ravel()
-        if (self.bArmRemoval):
-            self.do_not_ask.append( pulled_idx_pair )
+        if self.t<1000 or (self.t%100==0):
+            U, V, out_nIter, stat = rankone_modif(self.myX, self.myZ, self.myRewards, self.r, self.cheatU, self.cheatV, self.R)
+            self.theta_hat=(U@V.T).ravel()
+            if (self.bArmRemoval):
+                self.do_not_ask.append( pulled_idx_pair )
 
         my_t = self.t + 1
         self.t += 1
