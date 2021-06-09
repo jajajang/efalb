@@ -1,6 +1,7 @@
 from myutils3_v2 import *
 from collections import OrderedDict
-from blbandits3 import *
+#from blbandits3 import * ##############before 210425
+from blbandits_with_efalb_210425 import *
 from collections import namedtuple
 
 ParamBlTwoStage_ = namedtuple("ParamBlTwoStage_", "C_T1, multiplier")
@@ -12,9 +13,12 @@ ParamBlOneStage_ = namedtuple("ParamBlOneStage_", "multiplier")
 class ParamBlOneStage(ParamBlOneStage_):
     def shortstr(self):
         return "m=%.2g" % (self.multiplier)
-
 ParamBlOful_ = namedtuple("ParamBlOful_", "multiplier")
 class ParamBlOful(ParamBlOful_):
+    def shortstr(self):
+        return "m=%.2g" % (self.multiplier)
+ParamEFALB_ = namedtuple("ParamEFALB_", "multiplier")
+class ParamEFALB(ParamEFALB_):
     def shortstr(self):
         return "m=%.2g" % (self.multiplier)
 
@@ -52,7 +56,9 @@ def paramGetList0(algoName):
     elif algoName == "bmoracle":  ##########################################################
         paramGrid['multiplier'] = baseMultiplierGrid
         paramclass = ParamBMOracle
-
+    elif algoName == "EFALB":
+        paramGrid['multiplier'] = baseMultiplierGrid
+        paramclass = ParamEFALB
     elif algoName.startswith("bltwostage"):
         paramGrid['C_T1'] = baseCT1Grid
         paramGrid['multiplier'] = baseMultiplierGrid
@@ -90,6 +96,9 @@ def paramGetList1(algoName):
     elif   algoName == "bmoracle": ##########################################################
         paramGrid['multiplier'] = baseMultiplierGrid
         paramclass = ParamBMOracle
+    elif   algoName == "EFALB": ##########################################################
+        paramGrid['multiplier'] = baseMultiplierGrid
+        paramclass = ParamEFALB
     elif algoName.startswith("bltwostage"):
         paramGrid['C_T1'] = baseCT1Grid
         paramGrid['multiplier'] = baseMultiplierGrid
@@ -190,6 +199,10 @@ def banditFactory(data, algoName, algoParam, exprOpts):
     if algoName == "bloful":
         Sp = np.sqrt(lam)*data.S_F
         algo = BilinearOful(data.X, data.Z, lam, data.R, Sp,
+                            multiplier=algoParam.multiplier)
+    elif algoName == "EFALB":
+        Sp = np.sqrt(lam)*data.S_F
+        algo = EFALB(data.X, data.Z, lam, exprOpts.T, data.R, Sp,
                             multiplier=algoParam.multiplier)
     elif algoName == "bmoracle":
         Sp = np.sqrt(lam)*data.S_F

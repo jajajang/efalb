@@ -1524,7 +1524,7 @@ def run_bilinear_bandit(learner, data_obj, T, initIdx=-1,timeList=[]):
         #     pass
 
         #- print out stats
-        if (t % 1000 == 0):
+        if (t % 500 == 0):
             timeSoFar = toc(my_tt)
             print(('t=%d, time=%.1f, radius_sq= %.4f, inst_reg=%.4f, cum_reg=%.4f' % \
                     (t, timeSoFar, radius_sq, inst_regret[t-1], cum_regret[t-1])))
