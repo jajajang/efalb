@@ -23,7 +23,7 @@ To replicate the result in the paper
   4. Run `python3 analyze_expr01_20210426_paper.py` 
   5. If you want to replicate other results in the appendix of our paper, run the following command:
      - For Appendix E.1, run `python3 efalb_epsilon_estimate.py`
-     - For Appendix E.2, run `python3 efalb_computation_time_measure.py`
+     - For Appendix E.2, run `python3 efalb_time_measure.py` for checking computational time of eFALB, and `python3 COBYLA_time_measure.py` for its opponent. 
      - For Appendix E.3, follow the same steps 1-4 with appropriate changes on T and R variables in 'running_script.sh', `python3 analyze_expr01_20210426_paper.py` (here they are total_time and RRR), and subfolder name. 
 
 This code was written based on Jun's code, https://github.com/kwangsungjun/lrbandit.
