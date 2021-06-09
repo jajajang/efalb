@@ -1,0 +1,129 @@
+  0%|          | 0/60 [00:00<?, ?it/s]opts =  namespace(R=0.01, T=10000, args=Namespace(R='0.01', T='10000', algo='bmoracle', armtype=None, d='8', dataname='sphericalgaussian', lam=None, nTry='60', prefix=None, r='1', tuning_grid='1'), dataSeed=99, dataopts=namespace(N1=32, N2=32, R=0.01, S_2norm=0.04, armtype='gaussian', d1=8, d2=8, r=1), gSeed=119, lam=1.0, nTry=60, tuningGrid=1)
+
+################################################################################
+#----- tryIdx =     0
+(la.norm(data.Th), la.norm(data.Th,2)) =  (0.04, 0.04)
+data.expt_reward[0,0] =  -0.0030502725206897558
+paramList =  [ParamBMOracle(multiplier=0.01),
+ ParamBMOracle(multiplier=0.03162277660168379),
+ ParamBMOracle(multiplier=0.1),
+ ParamBMOracle(multiplier=0.31622776601683794),
+ ParamBMOracle(multiplier=1.0)]
+
+#- paramIdx =     0
+algoParam =  ParamBMOracle(multiplier=0.01)
+[[-0.1442  0.0218 -0.5867  0.6441  0.146   0.3422 -0.2813 -0.0468]]
+[[-0.0032 -0.0867  0.8423 -0.0719  0.5049  0.1121 -0.0238 -0.0994]]
+t=500, time=0.5, radius_sq= 0.0007, inst_reg=0.0005, cum_reg=2.4472
+t=1000, time=1.2, radius_sq= 0.0007, inst_reg=0.0005, cum_reg=3.4696
+t=1500, time=1.3, radius_sq= 0.0007, inst_reg=0.0005, cum_reg=4.3732
+t=2000, time=1.5, radius_sq= 0.0007, inst_reg=0.0005, cum_reg=5.1632
+t=2500, time=1.6, radius_sq= 0.0007, inst_reg=0.0005, cum_reg=5.5098
+t=3000, time=1.8, radius_sq= 0.0007, inst_reg=0.0005, cum_reg=5.7529
+t=3500, time=1.9, radius_sq= 0.0007, inst_reg=0.0005, cum_reg=6.0121
+t=4000, time=2.1, radius_sq= 0.0007, inst_reg=0.0005, cum_reg=6.1978
+t=4500, time=2.3, radius_sq= 0.0007, inst_reg=0.0000, cum_reg=6.2443
+t=5000, time=2.4, radius_sq= 0.0007, inst_reg=0.0000, cum_reg=6.2490
+t=5500, time=2.6, radius_sq= 0.0007, inst_reg=0.0000, cum_reg=6.2692
+t=6000, time=2.7, radius_sq= 0.0007, inst_reg=0.0000, cum_reg=6.2692
+t=6500, time=2.9, radius_sq= 0.0007, inst_reg=0.0000, cum_reg=6.2692
+t=7000, time=3.0, radius_sq= 0.0007, inst_reg=0.0000, cum_reg=6.2789
+t=7500, time=3.2, radius_sq= 0.0007, inst_reg=0.0000, cum_reg=6.2789
+t=8000, time=3.3, radius_sq= 0.0007, inst_reg=0.0000, cum_reg=6.2789
+t=8500, time=3.5, radius_sq= 0.0007, inst_reg=0.0000, cum_reg=6.2789
+t=9000, time=3.7, radius_sq= 0.0007, inst_reg=0.0000, cum_reg=6.2985
+t=9500, time=3.8, radius_sq= 0.0007, inst_reg=0.0000, cum_reg=6.2985
+t=10000, time=4.0, radius_sq= 0.0007, inst_reg=0.0000, cum_reg=6.3032
+elapsed =  4.000787
+cumExpectedRewards =  178.82817670677832
+cumExpectedRegret =  6.303188730791675
+
+#- paramIdx =     1
+algoParam =  ParamBMOracle(multiplier=0.03162277660168379)
+[[-0.6694  0.3973  0.236  -0.2336  0.2554 -0.3214  0.2498 -0.2301]]
+[[-0.1734 -0.1549  0.3346  0.2155  0.246   0.2095  0.2295 -0.794 ]]
+t=500, time=0.5, radius_sq= 0.0021, inst_reg=0.0124, cum_reg=4.2007
+t=1000, time=1.0, radius_sq= 0.0021, inst_reg=0.0005, cum_reg=6.2901
+t=1500, time=1.1, radius_sq= 0.0021, inst_reg=0.0014, cum_reg=7.6764
+t=2000, time=1.2, radius_sq= 0.0021, inst_reg=0.0000, cum_reg=8.4289
+t=2500, time=1.3, radius_sq= 0.0021, inst_reg=0.0016, cum_reg=9.4677
+t=3000, time=1.4, radius_sq= 0.0021, inst_reg=0.0000, cum_reg=10.1212
+t=3500, time=1.6, radius_sq= 0.0021, inst_reg=0.0016, cum_reg=10.8496
+t=4000, time=1.7, radius_sq= 0.0021, inst_reg=0.0000, cum_reg=11.0386
+t=4500, time=1.8, radius_sq= 0.0021, inst_reg=0.0000, cum_reg=11.7213
+t=5000, time=2.0, radius_sq= 0.0021, inst_reg=0.0000, cum_reg=12.1167
+t=5500, time=2.1, radius_sq= 0.0021, inst_reg=0.0000, cum_reg=12.2989
+t=6000, time=2.3, radius_sq= 0.0021, inst_reg=0.0000, cum_reg=12.3334
+t=6500, time=2.4, radius_sq= 0.0021, inst_reg=0.0000, cum_reg=12.4774
+t=7000, time=2.6, radius_sq= 0.0021, inst_reg=0.0005, cum_reg=12.7110
+t=7500, time=2.7, radius_sq= 0.0021, inst_reg=0.0000, cum_reg=12.9583
+t=8000, time=2.9, radius_sq= 0.0021, inst_reg=0.0000, cum_reg=13.0711
+t=8500, time=3.0, radius_sq= 0.0021, inst_reg=0.0016, cum_reg=13.1134
+t=9000, time=3.2, radius_sq= 0.0021, inst_reg=0.0000, cum_reg=13.3790
+t=9500, time=3.4, radius_sq= 0.0021, inst_reg=0.0014, cum_reg=13.8940
+t=10000, time=3.6, radius_sq= 0.0021, inst_reg=0.0000, cum_reg=13.9653
+elapsed =  3.553681
+cumExpectedRewards =  171.1660340724913
+cumExpectedRegret =  13.965331365078697
+
+#- paramIdx =     2
+algoParam =  ParamBMOracle(multiplier=0.1)
+[[ 0.4601 -0.6559  0.1627  0.3032  0.0609  0.227  -0.3833 -0.1937]]
+[[-0.825  -0.1961  0.2909  0.2035  0.2691  0.1741  0.0106  0.2283]]
+t=500, time=0.5, radius_sq= 0.0068, inst_reg=0.0077, cum_reg=5.6231
+t=1000, time=1.0, radius_sq= 0.0068, inst_reg=0.0000, cum_reg=9.1568
+t=1500, time=1.1, radius_sq= 0.0068, inst_reg=0.0092, cum_reg=11.8941
+t=2000, time=1.2, radius_sq= 0.0068, inst_reg=0.0049, cum_reg=14.7929
+t=2500, time=1.3, radius_sq= 0.0068, inst_reg=0.0099, cum_reg=16.7187
+t=3000, time=1.4, radius_sq= 0.0068, inst_reg=0.0061, cum_reg=19.1752
+t=3500, time=1.5, radius_sq= 0.0068, inst_reg=0.0104, cum_reg=21.2452
+t=4000, time=1.7, radius_sq= 0.0068, inst_reg=0.0107, cum_reg=22.9709
+t=4500, time=1.8, radius_sq= 0.0068, inst_reg=0.0005, cum_reg=23.8211
+t=5000, time=2.0, radius_sq= 0.0068, inst_reg=0.0000, cum_reg=24.9896
+t=5500, time=2.1, radius_sq= 0.0068, inst_reg=0.0000, cum_reg=26.1102
+t=6000, time=2.2, radius_sq= 0.0068, inst_reg=0.0000, cum_reg=26.9447
+t=6500, time=2.4, radius_sq= 0.0068, inst_reg=0.0000, cum_reg=27.6104
+t=7000, time=2.5, radius_sq= 0.0068, inst_reg=0.0005, cum_reg=28.7375
+t=7500, time=2.7, radius_sq= 0.0068, inst_reg=0.0000, cum_reg=29.4868
+t=8000, time=2.9, radius_sq= 0.0068, inst_reg=0.0000, cum_reg=30.4026
+t=8500, time=3.0, radius_sq= 0.0068, inst_reg=0.0000, cum_reg=30.7284
+t=9000, time=3.2, radius_sq= 0.0068, inst_reg=0.0014, cum_reg=31.2802
+t=9500, time=3.4, radius_sq= 0.0068, inst_reg=0.0005, cum_reg=31.9270
+t=10000, time=3.6, radius_sq= 0.0068, inst_reg=0.0000, cum_reg=32.5286
+elapsed =  3.557412
+cumExpectedRewards =  152.6027460681038
+cumExpectedRegret =  32.528619369466185
+
+#- paramIdx =     3
+algoParam =  ParamBMOracle(multiplier=0.31622776601683794)
+[[-0.6262 -0.3072  0.5013 -0.3988 -0.1667  0.1536  0.0707  0.2163]]
+[[-0.4783  0.2898  0.0137 -0.5396  0.4715 -0.375   0.1146  0.1406]]
+t=500, time=0.4, radius_sq= 0.0215, inst_reg=0.0062, cum_reg=6.7240
+t=1000, time=1.0, radius_sq= 0.0215, inst_reg=0.0125, cum_reg=12.0869
+t=1500, time=1.1, radius_sq= 0.0215, inst_reg=0.0177, cum_reg=16.9035
+t=2000, time=1.2, radius_sq= 0.0215, inst_reg=0.0018, cum_reg=21.4058
+t=2500, time=1.3, radius_sq= 0.0215, inst_reg=0.0000, cum_reg=25.5091
+t=3000, time=1.4, radius_sq= 0.0215, inst_reg=0.0018, cum_reg=29.1989
+t=3500, time=1.5, radius_sq= 0.0215, inst_reg=0.0073, cum_reg=32.8265
+t=4000, time=1.7, radius_sq= 0.0215, inst_reg=0.0091, cum_reg=36.1970
+t=4500, time=1.8, radius_sq= 0.0215, inst_reg=0.0060, cum_reg=39.0085
+t=5000, time=2.0, radius_sq= 0.0215, inst_reg=0.0082, cum_reg=42.0803
+t=5500, time=2.1, radius_sq= 0.0215, inst_reg=0.0005, cum_reg=44.7203
+t=6000, time=2.3, radius_sq= 0.0215, inst_reg=0.0014, cum_reg=46.9179
+t=6500, time=2.4, radius_sq= 0.0215, inst_reg=0.0005, cum_reg=49.5130
+t=7000, time=2.6, radius_sq= 0.0215, inst_reg=0.0080, cum_reg=51.8876
+t=7500, time=2.7, radius_sq= 0.0215, inst_reg=0.0005, cum_reg=54.0994
+t=8000, time=2.9, radius_sq= 0.0215, inst_reg=0.0000, cum_reg=56.0106
+t=8500, time=3.1, radius_sq= 0.0215, inst_reg=0.0046, cum_reg=57.8054
+t=9000, time=3.2, radius_sq= 0.0215, inst_reg=0.0014, cum_reg=60.1095
+t=9500, time=3.4, radius_sq= 0.0215, inst_reg=0.0000, cum_reg=61.7923
+t=10000, time=3.6, radius_sq= 0.0215, inst_reg=0.0000, cum_reg=63.6865
+elapsed =  3.590026
+cumExpectedRewards =  121.44482805073113
+cumExpectedRegret =  63.686537386838864
+
+#- paramIdx =     4
+algoParam =  ParamBMOracle(multiplier=1.0)
+[[ 0.068   0.3868 -0.1478  0.2683  0.6971  0.3522  0.3744  0.0431]]
+[[-0.4294 -0.2223  0.3273 -0.2011  0.7159 -0.139   0.2142  0.2024]]
+t=500, time=0.5, radius_sq= 0.0679, inst_reg=0.0150, cum_reg=7.2464
