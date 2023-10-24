@@ -1,61 +1,9 @@
-opts =  namespace(nTry=60,
-          gSeed=119,
-          dataSeed=99,
-          R=0.01,
-          dataopts=namespace(d1=8,
-                             d2=8,
-                             r=1,
-                             N1=32,
-                             N2=32,
-                             S_2norm=0.04,
-                             armtype='gaussian',
-                             R=0.01),
-          T=10000,
-          lam=1.0,
-          args=Namespace(algo='bltwostage-bm-sp_simple2', lam=None, r='1', R='0.01', d='8', prefix=None, armtype=None, dataname='sphericalgaussian', T='10000', tuning_grid='1', nTry='60'),
-          tuningGrid=1)
-  0%|          | 0/60 [00:00<?, ?it/s]/Users/jang-kyoungseok/Desktop/Anaconda/anaconda3/envs/NeurIPS2023_lowrank/lib/python3.11/site-packages/cvxpy/expressions/expression.py:612: UserWarning: 
-This use of ``*`` has resulted in matrix multiplication.
-Using ``*`` for matrix multiplication has been deprecated since CVXPY 1.1.
-    Use ``*`` for matrix-scalar and vector-scalar multiplication.
-    Use ``@`` for matrix-matrix and matrix-vector multiplication.
-    Use ``multiply`` for elementwise multiplication.
-This code path has been hit 1 times so far.
-
-  warnings.warn(msg, UserWarning)
-/Users/jang-kyoungseok/Desktop/Anaconda/anaconda3/envs/NeurIPS2023_lowrank/lib/python3.11/site-packages/cvxpy/expressions/expression.py:612: UserWarning: 
-This use of ``*`` has resulted in matrix multiplication.
-Using ``*`` for matrix multiplication has been deprecated since CVXPY 1.1.
-    Use ``*`` for matrix-scalar and vector-scalar multiplication.
-    Use ``@`` for matrix-matrix and matrix-vector multiplication.
-    Use ``multiply`` for elementwise multiplication.
-This code path has been hit 2 times so far.
-
-  warnings.warn(msg, UserWarning)
-/Users/jang-kyoungseok/Desktop/Anaconda/anaconda3/envs/NeurIPS2023_lowrank/lib/python3.11/site-packages/cvxpy/expressions/expression.py:612: UserWarning: 
-This use of ``*`` has resulted in matrix multiplication.
-Using ``*`` for matrix multiplication has been deprecated since CVXPY 1.1.
-    Use ``*`` for matrix-scalar and vector-scalar multiplication.
-    Use ``@`` for matrix-matrix and matrix-vector multiplication.
-    Use ``multiply`` for elementwise multiplication.
-This code path has been hit 3 times so far.
-
-  warnings.warn(msg, UserWarning)
-/Users/jang-kyoungseok/Desktop/Anaconda/anaconda3/envs/NeurIPS2023_lowrank/lib/python3.11/site-packages/cvxpy/expressions/expression.py:612: UserWarning: 
-This use of ``*`` has resulted in matrix multiplication.
-Using ``*`` for matrix multiplication has been deprecated since CVXPY 1.1.
-    Use ``*`` for matrix-scalar and vector-scalar multiplication.
-    Use ``@`` for matrix-matrix and matrix-vector multiplication.
-    Use ``multiply`` for elementwise multiplication.
-This code path has been hit 4 times so far.
-
-  warnings.warn(msg, UserWarning)
-  0%|          | 0/60 [00:00<?, ?it/s]
+  0%|          | 0/60 [00:00<?, ?it/s]opts =  namespace(R=0.01, T=10000, args=Namespace(R='0.01', T='10000', algo='bltwostage-bm-sp_simple2', armtype=None, d='8', dataname='sphericalgaussian', lam=None, nTry='60', prefix=None, r='1', tuning_grid='1'), dataSeed=99, dataopts=namespace(N1=32, N2=32, R=0.01, S_2norm=0.04, armtype='gaussian', d1=8, d2=8, r=1), gSeed=119, lam=1.0, nTry=60, tuningGrid=1)
 
 ################################################################################
 #----- tryIdx =     0
 (la.norm(data.Th), la.norm(data.Th,2)) =  (0.04, 0.04)
-data.expt_reward[0,0] =  -0.003050272520689757
+data.expt_reward[0,0] =  -0.0030502725206897558
 paramList =  [ParamBlTwoStage(C_T1=1.0, multiplier=0.01),
  ParamBlTwoStage(C_T1=1.0, multiplier=0.03162277660168379),
  ParamBlTwoStage(C_T1=1.0, multiplier=0.1),
@@ -85,17 +33,46 @@ paramList =  [ParamBlTwoStage(C_T1=1.0, multiplier=0.01),
 #- paramIdx =     0
 algoParam =  ParamBlTwoStage(C_T1=1.0, multiplier=0.01)
 self.T1 =  15
-Traceback (most recent call last):
-  File "/Users/jang-kyoungseok/Documents/GitHub/230925-low-rank-project/210425_run_expr01.py", line 111, in <module>
-    [rewardAry, armPairAry, dbgDict] = run_bilinear_bandit(algo, data, opts.T)
-                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/jang-kyoungseok/Documents/GitHub/230925-low-rank-project/blbandits_with_efalb_210425.py", line 1505, in run_bilinear_bandit
-    next_arm_pair, radius_sq = learner.next_arm()
-                               ^^^^^^^^^^^^^^^^^^
-  File "/Users/jang-kyoungseok/Documents/GitHub/230925-low-rank-project/blbandits_with_efalb_210425.py", line 1075, in next_arm
-    from matrixrecovery import rankone
-  File "/Users/jang-kyoungseok/Documents/GitHub/230925-low-rank-project/matrixrecovery/__init__.py", line 4, in <module>
-    from .matrixrecovery import rankone
-  File "/Users/jang-kyoungseok/Documents/GitHub/230925-low-rank-project/matrixrecovery/matrixrecovery.py", line 1, in <module>
-    import myutils_cython
-ModuleNotFoundError: No module named 'myutils_cython'
+out_nIter =  9
+t=500, time=0.2, radius_sq= 0.0001, inst_reg=0.0046, cum_reg=2.8875
+t=1000, time=0.3, radius_sq= 0.0001, inst_reg=0.0046, cum_reg=5.1638
+t=1500, time=0.4, radius_sq= 0.0001, inst_reg=0.0046, cum_reg=7.4400
+t=2000, time=0.5, radius_sq= 0.0001, inst_reg=0.0046, cum_reg=9.7162
+t=2500, time=0.5, radius_sq= 0.0001, inst_reg=0.0046, cum_reg=11.9925
+t=3000, time=0.6, radius_sq= 0.0001, inst_reg=0.0046, cum_reg=14.2687
+t=3500, time=0.7, radius_sq= 0.0001, inst_reg=0.0046, cum_reg=16.5449
+t=4000, time=0.8, radius_sq= 0.0001, inst_reg=0.0046, cum_reg=18.8211
+t=4500, time=0.9, radius_sq= 0.0001, inst_reg=0.0046, cum_reg=21.0974
+t=5000, time=0.9, radius_sq= 0.0001, inst_reg=0.0046, cum_reg=23.3736
+t=5500, time=1.0, radius_sq= 0.0001, inst_reg=0.0046, cum_reg=25.6498
+t=6000, time=1.1, radius_sq= 0.0001, inst_reg=0.0046, cum_reg=27.9260
+t=6500, time=1.2, radius_sq= 0.0001, inst_reg=0.0046, cum_reg=30.2023
+t=7000, time=1.3, radius_sq= 0.0001, inst_reg=0.0046, cum_reg=32.4785
+t=7500, time=1.3, radius_sq= 0.0001, inst_reg=0.0046, cum_reg=34.7547
+t=8000, time=1.4, radius_sq= 0.0001, inst_reg=0.0046, cum_reg=37.0310
+t=8500, time=1.5, radius_sq= 0.0001, inst_reg=0.0046, cum_reg=39.3072
+t=9000, time=1.6, radius_sq= 0.0001, inst_reg=0.0046, cum_reg=41.5834
+t=9500, time=1.7, radius_sq= 0.0001, inst_reg=0.0046, cum_reg=43.8596
+t=10000, time=1.7, radius_sq= 0.0001, inst_reg=0.0046, cum_reg=46.1359
+elapsed =  1.738572
+cumExpectedRewards =  138.99549955843443
+cumExpectedRegret =  46.135865879135565
+
+#- paramIdx =     1
+algoParam =  ParamBlTwoStage(C_T1=1.0, multiplier=0.03162277660168379)
+self.T1 =  15
+out_nIter =  6
+t=500, time=0.1, radius_sq= 0.0003, inst_reg=0.0073, cum_reg=4.7097
+t=1000, time=0.2, radius_sq= 0.0003, inst_reg=0.0073, cum_reg=8.3450
+t=1500, time=0.3, radius_sq= 0.0003, inst_reg=0.0071, cum_reg=12.0580
+t=2000, time=0.4, radius_sq= 0.0003, inst_reg=0.0060, cum_reg=15.4500
+t=2500, time=0.4, radius_sq= 0.0003, inst_reg=0.0060, cum_reg=18.4660
+t=3000, time=0.5, radius_sq= 0.0004, inst_reg=0.0063, cum_reg=21.5501
+t=3500, time=0.6, radius_sq= 0.0004, inst_reg=0.0063, cum_reg=24.7164
+t=4000, time=0.7, radius_sq= 0.0004, inst_reg=0.0063, cum_reg=27.9065
+t=4500, time=0.8, radius_sq= 0.0004, inst_reg=0.0063, cum_reg=31.0728
+t=5000, time=0.8, radius_sq= 0.0004, inst_reg=0.0063, cum_reg=34.2392
+t=5500, time=0.9, radius_sq= 0.0004, inst_reg=0.0063, cum_reg=37.4388
+t=6000, time=1.0, radius_sq= 0.0004, inst_reg=0.0063, cum_reg=40.6158
+t=6500, time=1.1, radius_sq= 0.0004, inst_reg=0.0063, cum_reg=43.7822
+t=7000, time=1.2, radius_sq= 0.0004, inst_reg=0.0063, cum_reg=46.9564

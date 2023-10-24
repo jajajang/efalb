@@ -134,6 +134,323 @@ class Glm(object):
         raise NotImplementedError()
 
 
+class GlmLogistic(Glm):
+    def __init__(self):
+        raise NotImplementedError()
+
+    @staticmethod
+    def negloglik(z, y):
+        assert (float(y) == 1.0 or float(y) == 0.0)
+        return -z*y + GlmLogistic.m(z)
+
+    @staticmethod
+    def negloglik_derivative(z, y):
+        assert (float(y) == 1.0 or float(y) == 0.0)
+        return -y + GlmLogistic.mu(z)
+
+    @staticmethod
+    def mu(z):  # link function 
+        return 1.0/(1.0+np.exp(-z))
+
+    @staticmethod
+    def m(z):   # integral of mu 
+        return logsumexp([np.zeros(z.shape), z],axis=0) #np.log(1.0 + np.exp(z))
+#        return np.log(1.0 + np.exp(z))
+
+    @staticmethod
+    def getKappa(S):
+        return 1.0 / ((1 + exp(S)) * (1 + exp(-S)))
+
+class GlmProbit(Glm):
+    def __init__(self):
+        raise NotImplementedError()
+
+    @staticmethod
+    def negloglik(z, y):
+        assert (float(y) == 1.0 or float(y) == 0.0)
+        return -z*y + GlmProbit.m(z)
+
+    @staticmethod
+    def negloglik_derivative(z, y):
+        assert (float(y) == 1.0 or float(y) == 0.0)
+        return -y + GlmProbit.mu(z)
+
+    @staticmethod
+    def mu(z):  # link function
+        return scipy.stats.norm.cdf(z)
+
+    @staticmethod
+    def m(z):   # integral of mu
+        return z*sstats.norm.cdf(z) + sstats.norm.pdf(z)
+
+    @staticmethod
+    def getKappa(S):
+        return scipy.stats.norm.pdf(S)
+
+    pass
+
+
+class GlmGaussian(Glm):
+    def __init__(self):
+        raise NotImplementedError();
+
+    @staticmethod
+    def negloglik(z, y):
+        return -z*y + GlmGaussian.m(z);
+
+    @staticmethod
+    def negloglik_derivative(z, y):
+        return -y + GlmGaussian.mu(z);
+
+    @staticmethod
+    def mu(z):  # link function 
+        return z
+
+    @staticmethod
+    def m(z):   # integral of mu 
+        return .5*z**2
+
+    @staticmethod
+    def getKappa(S):
+        return 1.0
+
+########################################
+class BilinearGlocNuclear(Bandit):
+########################################
+    """
+    note that this is just for the squared loss (1/2)*(theta^T * x - y)^2
+    R: subgaussian parameter.
+    S: norm upper bound of theta_star
+    r: range parameter for qgloc
+    kappa: lower bound on the dervative of \mu, always 1 for squared loss.
+    """    
+    def __init__(self, X, Z, lam, R, S_star, glm=GlmGaussian, flags={},
+                 multiplier=1.0, calc_radius_version=3, bArmRemoval=False):
+        self.X = X
+        self.Z = Z
+        self.lam = lam
+        self.R = R
+        self.S_star = S_star
+        self.glm = glm
+        self.kappa = glm.getKappa(self.S_star)
+        assert self.kappa == 1.0
+        self.multiplier = multiplier
+        self.bArmRemoval = bArmRemoval
+        self.bNaive = flags.get('bNaive', False)
+
+        #- more instance variables
+        self.t = 1
+        self.N1, self.d1 = self.X.shape
+        self.N2, self.d2 = self.Z.shape
+
+        # super arms
+        self.N = self.N1 * self.N2
+        self.d = self.d1 * self.d2
+        self.W = np.zeros( (self.N, self.d) )
+        for i in range(self.W.shape[0]):
+            i1, i2 = np.unravel_index(i, (self.N1, self.N2))
+            self.W[i,:] = np.outer(self.X[i1,:], self.Z[i2,:]).ravel()
+
+        self.At = np.eye(self.d)*self.lam
+        self.invAt = np.eye(self.d)/self.lam
+        self.theta_s = np.zeros(self.d); 
+        # print "Note that I am setting theta_s as zeros and this is warned to cause an error in cvx."
+        self.theta_hat = self.theta_s.copy()
+        #- theta_hat = np.zeros(self.d); # this causes an error in cvx
+        #- alternative: I could randomize with just a bit of noise
+
+        #-- TODO I could use the following to speed up
+        # self.W_invVt_norm_sq = np.sum(self.W * self.W, axis=1) / self.lam
+
+        self.WTq = np.zeros(self.d)
+        self.sum_q_t_sq = 0
+        self.radius_problem_constant = 0.
+
+        self.cvx_th = cvx.Variable(self.d)
+        #- WARNING: it is important to reshape by (d2,d1) not (d1,d2) 
+        self.cvx_cons = [cvx.norm(cvx.reshape(self.cvx_th, (self.d2,self.d1)), 'nuc') <= self.S_star]
+
+        #- do_not_ask_list
+        assert bArmRemoval == False
+        self.do_not_ask = []
+
+        self.dbg_dict = {
+            'multiplier':float(multiplier),
+            'calc_radius_version': calc_radius_version,
+        }
+
+        self.time_obj = 0.0
+        self.time_cvx = 0.0
+
+        self.cvx_th_p = cvx.Parameter(shape=self.d)
+        self.cvx_A = cvx.Parameter(shape=(self.d,self.d), PSD=True) 
+        self.cvx_obj = cvx.Minimize(cvx.quad_form(self.cvx_th - self.cvx_th_p, self.cvx_A))
+        self.cvx_prob = cvx.Problem(self.cvx_obj, self.cvx_cons)
+
+    def _calc_radius_sq_v1(self): # the best at around 1.0
+        if (self.t == 1):
+            radius_sq = 0
+        else:
+            radius_sq = self.radius_problem_constant + (self.S_star**2) * self.lam
+        return radius_sq
+
+    def _calc_radius_sq_v2(self): # the best at around 1.0
+        if (self.t == 1):
+            radius_sq = 0
+        else:
+            radius_sq = self.radius_problem_constant
+        return radius_sq
+
+    def _calc_radius_sq_v3(self): # the best at around 0.01
+        dt = 0.2; R = self.R
+        if (self.t == 1):
+            radius_sq = 0
+        else:
+            #- still, omitting some terms.
+            B = (0.5/self.kappa)*self.radius_problem_constant + 2*self.kappa*(self.S_star**2) * self.lam
+            inner = 1 + (2/self.kappa)*B + 4*R**4/(self.kappa**4 * dt**2)
+            extra = (self.sum_q_t_sq - self.theta_hat.dot(self.WTq))
+            assert (extra > -1e-8)
+            alpha = 1 + (4.0/self.kappa)*B \
+                      + (8*R**2/self.kappa**2)*np.log((2/dt)*np.sqrt( inner ))
+            radius_sq =  alpha\
+                         + self.lam*self.S_star**2 \
+                         - extra
+        return radius_sq
+
+    def _calc_radius_sq(self): 
+        v = self.dbg_dict['calc_radius_version']
+        if (v == 1):
+            return self._calc_radius_sq_v1()
+        elif (v == 2):
+            return self._calc_radius_sq_v2()
+        elif (v == 3):
+            return self._calc_radius_sq_v3()
+        else:
+            raise ValueError()
+
+    def next_arm(self):
+        valid_idx = setdiff1d(np.arange(self.N),self.do_not_ask)
+        if (self.t == 1):
+            return (ra.randint(self.N1), ra.randint(self.N2)), np.nan
+        invAt = self.invAt
+        radius_sq = self.multiplier * self._calc_radius_sq()
+
+        tt = tic() # this is only 0.168 while time_cvx is 17.x seconds!!
+        obj_func = np.dot(self.W, self.theta_hat)  \
+                + np.sqrt(radius_sq) * np.sqrt(mahalanobis_norm_sq_batch(self.W, self.invAt))
+        self.time_obj += toc(tt)
+
+        arm_inner = np.argmax(obj_func[valid_idx])
+        arm = valid_idx[arm_inner]
+
+        chosenPair = np.unravel_index(arm, (self.N1,self.N2))
+        return chosenPair, radius_sq
+
+    def _solve_by_cvx(self, theta_prime, At):
+        """
+        if you want to improve the speed, might want to use quadprog. see
+        https://scaron.info/blog/quadratic-programming-in-python.html
+        """
+        d = self.d
+        th = self.cvx_th
+        cons = self.cvx_cons
+
+        #- new method
+        obj = self.cvx_obj
+        prob = self.cvx_prob
+        self.cvx_th_p.value = theta_prime
+        self.cvx_A.value = At
+
+        if self.bNaive:
+            return theta_prime
+        else:
+            #- previous method
+            # obj = cvx.Minimize(cvx.quad_form(th - theta_prime, At))
+            # prob = cvx.Problem(obj, cons)
+            try: 
+                tt = tic()
+    #            prob.solve(warm_start=True, solver="MOSEK")
+                #- eps=1e-5 is the default
+                prob.solve(warm_start=True, solver="SCS", eps=1e-2)
+                self.time_cvx += toc(tt)
+            except Exception as inst:
+                print('#'*40); print('# ' + str(inst)); print('#'*40)
+                print('try again, with a different solver')
+                try:
+                    prob.solve(solver=cvx.SCS)
+                except Exception as inst2:
+                    ipdb.set_trace()
+                    pass
+
+            sol = np.array(th.value).flatten()
+            assert sol[0] is not None
+            return sol
+    
+    def update(self, pulled_idx_pair, y_t):
+        pulled_idx = np.ravel_multi_index(pulled_idx_pair, (self.N1,self.N2))
+        wt = self.W[pulled_idx, :]
+
+        At = self.At
+        invAt = self.invAt
+        theta_s = self.theta_s
+        kappa = self.kappa
+        d = self.d
+
+        At_new = At + np.outer(wt, wt)
+        At_new = .5*(At_new + At_new.T)
+        # eigvalsh = sla.eigvalsh(At_new)
+        # assert min(eigvalsh) >= 0 and eigvalsh.dtype != complex
+        invAt_new = inv(At_new)
+
+        z = np.dot(theta_s, wt)
+        grad = self.glm.negloglik_derivative(z, y_t); #  (1 / (1 + np.exp(-np.dot(theta_s, wt))) - y_t)
+        theta_prime = theta_s - grad * np.dot(invAt_new, wt) / kappa
+
+        try:    
+            theta_s = self._solve_by_cvx(theta_prime, At_new)
+        except Exception as inst:
+            eps = 1e-7
+            print('#'*40); print('# '+ str(inst)); print('#'*40)
+            print('try again... by adding eps=%g'%eps)
+
+            try:
+                theta_s = self._solve_by_cvx(theta_prime, At_new + eps*np.eye(len(theta_prime)))
+            except Exception as inst2:
+                ipdb.set_trace()
+
+        assert theta_s[0] is not None
+
+        self.At = At_new
+        self.invAt = invAt_new
+        self.theta_s = theta_s
+
+        #- extra
+        qt = np.dot(theta_s, wt)
+        self.WTq += qt * wt
+        self.sum_q_t_sq += qt**2
+        invAt = self.invAt
+        self.radius_problem_constant += (grad ** 2) * np.dot(wt, np.dot(invAt, wt)); # no need for this, but let's keep it this way.
+        self.theta_hat = np.dot(self.invAt, self.WTq)
+        if (self.bArmRemoval):
+            self.do_not_ask.append( pulled_idx_pair )
+
+        self.t += 1
+    
+    def getDoNotAsk(self):
+        return self.do_not_ask
+
+    def predict(self, X=None):
+        raise NotImplementedError()
+        if X is None:
+            X = self.X
+        return X.dot(self.theta_hat)
+
+    def get_debug_dict(self):
+        return self.dbg_dict
+
+    pass
+
 ########################################
 class BilinearOful(Bandit):
 ########################################
@@ -852,24 +1169,15 @@ class BilinearTwoStage(Bandit):
     def get_debug_dict(self):
         return self.dbg_dict
 
-
-
-
-
-
-
-
+####################
+class BilinearOneStage(Bandit):
 ########################################
-class LowPopArt_rankone(Bandit):
-########################################
-    """ this is rank one version.
+    """ a heuristic method that keeps updating the subspace in every exponentially-space time steps
+    SpType: 'simple2' or 'simple3'
     """
-    def __init__(self, X, Z, lam, R, S_F, sval_max, sval_min, r, C_T1, T, flags={}, subsample_func=None, subsample_rate=1.0, multiplier=1.0, binaryRewards=False, bArmRemoval=False, SpType=None, algoMatrixCompletion='optspace'):
-        """
-        Two stage: internally uses BilinearOful object.
-        """
-        self.X = X
-        self.Z = Z
+    def __init__(self, X, Z, lam, R, S_F, sval_max, sval_min, r, T, flags={}, subsample_func=None, subsample_rate=1.0, multiplier=1.0, binaryRewards=False, bArmRemoval=False, SpType='simple2'):
+        self.X = X.astype(float)
+        self.Z = Z.astype(float)
         self.R = R
         self.lam = lam
         self.delta = .2
@@ -877,23 +1185,21 @@ class LowPopArt_rankone(Bandit):
         self.sval_max = sval_max
         self.sval_min = sval_min
         self.r = r
-        self.C_T1 = C_T1
         self.T = T
         self.flags = flags
         self.multiplier = float(multiplier)
-        self.binaryRewards = binaryRewards
+        self.binaryRewards = binaryRewards # perhaps not being used
         self.bArmRemoval = bArmRemoval
-        self.SpType = SpType
+        self.SpType = SpType  # how to form Sp..?
+        self.subspaceUpdateBase = np.sqrt(2)
 
         #- to be set in the first stage
-        self.stage1arms = None
-        self.stage1rewards = []
+        self.arms = []
+        self.rewards = []
         self.hatUFull = None; self.hatVFull = None
         self.lamp = None
         self.Sp = None
         self.oful = None
-        self.subsetX = None
-        self.subsetZ = None
 
         # more instance variables
         self.t = 1
@@ -902,163 +1208,76 @@ class LowPopArt_rankone(Bandit):
         assert (self.d1 == self.d2)
         d = self.d1     # FIXME I should change this
 
-        #- old scheme; saved for reference..
-        # myT1 = int(np.ceil(C_T1 * self.R * d**(3/2) * r**(1/2) * np.sqrt(self.T)))
-        # self.T1 = np.maximum( myT1, self.r*(self.d1 + self.d2) - self.r**2 )
+        #- we update subspace after every t=knotList[i]
+        T1 = self.r*(self.d1 + self.d2) - self.r**2 
+        base = self.subspaceUpdateBase
+        L = np.ceil(np.log(T/T1) / np.log(base))
+        self.knotList = np.ceil(L*base ** np.arange(0, L)).astype(int)
 
-        #- new scheme
-        minT1 = self.r*(self.d1 + self.d2) - self.r**2 
-        self.T1 = int(np.ceil(C_T1 * minT1))
+        #- initialize oful
+        self.oful = BilinearOful(X=self.X, Z=self.Z, 
+                                lam=self.lam, R=self.R, Sp=np.sqrt(self.lam) * self.S_F,
+                                flags={}, multiplier=self.multiplier)
 
-        self.dbg_dict = {}
+        self.dbg_dict = {'knotList': self.knotList,
+                         'out_nIter_list': [] }
 
+        
     def next_arm(self):
-        if (self.t == 1):
-            # prepare representative arms.
-            self.subsetX, self.invX_norm = calcsubset.hybrid(self.X, 20)
-            self.subsetZ, self.invZ_norm = calcsubset.hybrid(self.Z, 20)
-            self.subsetXInv = dict(zip(self.subsetX, range(len(self.subsetX))))
-            self.subsetZInv = dict(zip(self.subsetZ, range(len(self.subsetZ))))
-
-            mat = dstack_product(self.subsetX, self.subsetZ)   # num of super arms (d^2) by 2
-            idxAry = ra.permutation(mat.shape[0])
-            nRepeat = int((self.T1 - 1) // len(idxAry) + 1)
-            idxAry = np.squeeze(np.tile(idxAry, (1,nRepeat)))
-            self.stage1arms = mat[idxAry[:self.T1],:]
-            self.stage1rewards = nans(self.T1)
-
-            #- if there is an empty row / column, then ensure that there is no empty row/column.
-            sa = self.stage1arms
-            if len(np.unique(sa[:,0])) != self.d1 or len(np.unique(sa[:,1])) != self.d2:
-                idxDiagonals = np.arange(0,len(mat),self.d2+1)
-                idxRemainders = np.setdiff1d(range(len(mat)), idxDiagonals)
-                idxRemainders = ra.permutation(idxRemainders)
-                oneTile = np.concatenate( (idxDiagonals,idxRemainders) )
-
-                nRepeat = int((self.T1 - 1) // len(idxAry) + 1)
-                idxAry = np.squeeze(np.tile(oneTile, (1,nRepeat)))
-                self.stage1arms = mat[idxAry[:self.T1],:]
-            
-            #- save necessary stats
-            self.dbg_dict['T1'] = self.T1
-            printExpr("self.T1")
-            pass
-
-        if (self.t <= self.T1):
-            armPairToPull = tuple(self.stage1arms[self.t-1,:])
-            radius_sq = np.nan
-        else:
-            # at the beginning of the second stage
-            if (self.t == self.T1+1):
-                #----- invoke matrix completion
-                    #- average out entries observed more than once.; stage1arms: list of (lArmIdx,rArmIdx).
-                matDict = averageMatrixEntries(self.stage1arms, self.stage1rewards)
-                    #- translate index
-                smat = [(self.subsetXInv[k1],self.subsetZInv[k2],v) for ((k1,k2),v) in matDict.items()]
-                    #- run optspace and but catch the stdout
-                if self.algoMatrixCompletion == 'optspace':
-                    import optspace
-                    [U,S,V,out_niter] = optspace.optspace(smat, rank_n=self.r, 
-                                    num_iter=1000, 
-                                    tol=1e-4, 
-                                    verbosity=0, 
-                                    outfile="")
-                    printExpr('out_niter')
-                    hatK = (U @ S @ V.T)
-                    self.dbg_dict['out_niter'] = out_niter
-                    assert np.all(np.logical_and(~np.isnan(hatK),~np.isinf(hatK)))
-                elif self.algoMatrixCompletion == 'bm':
-                    myX = []; myZ = []; myRewards = []
-                    for ((k1,k2),v) in matDict.items():
-                        myX.append( indicator(self.subsetXInv[k1],self.d1) )
-                        myZ.append( indicator(self.subsetZInv[k2],self.d2) )
-                        myRewards.append( v )
-                    myX = np.array(myX) 
-                    myZ = np.array(myZ)
-                    myRewards = np.array(myRewards)
-
-                    from matrixrecovery import rankone
-                    U,V,out_nIter,stat = rankone(myX,myZ,myRewards,self.r,self.R)
-                    printExpr('out_nIter')
-                    hatK = U@V.T
-                    self.dbg_dict['out_nIter'] = out_nIter
-                    assert np.all(np.logical_and(~np.isnan(hatK),~np.isinf(hatK)))
-                else:
-                    raise ValueError()
-
-                #- Instead of the following, we do a robust version of the same operation
-                #- hatTh = la.inv(self.X[self.subsetX,:]) @ hatK @ la.inv(self.Z[self.subsetZ,:].T) 
-                #- note lstsq is like solve(), but solves approximately when ill-conditioned
-# 				tmp = la.solve(self.X[self.subsetX,:], hatK)
-# 				self.hatThStage1 = la.solve(self.Z[self.subsetZ,:], tmp.T).T
-                tmp, _,_,_ = la.lstsq(self.X[self.subsetX,:], hatK, rcond=None)
-                tmp2, _,_,__ = la.lstsq(self.Z[self.subsetZ,:], tmp.T, rcond=None)
-                self.hatThStage1 = tmp2.T
-
-                #- get the subspaces
-                [self.hatUFull, self.hatSFull, VT] = la.svd(self.hatThStage1)
-                self.hatVFull = VT.T
-
-                #- rotate the arms
-                self.newX = self.X @ self.hatUFull
-                self.newZ = self.Z @ self.hatVFull
-
-                #- prepare oful
-                d = self.d1 # FIXME just an impromptu
-                T2 = self.T - self.T1
-                self.lamp = T2/d/self.r/np.log(1+T2/self.lam) # FIXME I think I should use T rather than T2...
-                term1 = np.sqrt(self.lam) * self.S_F #2 * np.sqrt(d*self.r)
-
-                kappa = self.sval_max / self.sval_min
-                Cp_Cpp = 1
-                term2 = np.sqrt(self.lamp)  \
-                      * Cp_Cpp**2 * kappa**4 * self.R**2 * d**3 * self.r / self.sval_min**2 / self.T1 \
-                      * self.invX_norm**2 * self.invZ_norm**2
-
-                if   self.SpType == None:
-                    self.Sp = term1 + self.sval_max * term2
-                elif self.SpType == 'simple':
-                    term2p = np.sqrt(self.lamp)  \
-                      * self.R**2 * d**3 * self.r / self.T1 \
-                      * self.invX_norm**2 * self.invZ_norm**2 
-                    self.Sp = term1 + self.sval_max * term2p
-                elif self.SpType == 'simple2':
-                    term2pp = np.sqrt(self.lamp)  \
-                      * self.R**2 * d**3 * self.r / self.T1
-                    self.Sp = term1 + self.sval_max * term2pp
-                elif self.SpType == 'simple3':
-                    self.Sp = term1 
-                else:
-                    raise ValueError()
-
-                k = self.r*(self.d1 + self.d2) - self.r**2
-                p = self.d1*self.d2
-                diagvec = [self.lam]*(self.r * self.d2)
-                row = [self.lam]*(self.r) + [self.lamp]*(self.d2 - self.r)
-                diagvec += row*(self.d1 - self.r)
-                self.D = np.diag(diagvec)                
-#                self.D = np.diag([self.lam]*k + [self.lamp]*(p-k))
-
-                #- initialize oful
-                self.oful = BilinearOful(X=self.newX, Z=self.newZ, 
-                                         lam=None, R=self.R, Sp=self.Sp, D=self.D,
-                                         flags={}, multiplier=self.multiplier)
-
-                #- pseudo play oful, so it is up to date!
-                for myt in range(self.T1):
-                    self.oful.update( tuple(self.stage1arms[myt,:]), self.stage1rewards[myt] )
-
-            #- get the next arm from oful 
-            armPairToPull, radius_sq = self.oful.next_arm()
-
-        return armPairToPull, radius_sq
+        return self.oful.next_arm()
 
     def update(self, pulled_arm_pair, y_t):
-        if (self.t <= self.T1):
-            assert(pulled_arm_pair == tuple(self.stage1arms[self.t-1,:]))
-            self.stage1rewards[self.t-1] = y_t
-        else:
-            self.oful.update(pulled_arm_pair, y_t)
+        self.arms.append(pulled_arm_pair)
+        self.rewards.append(y_t)
+        self.oful.update(pulled_arm_pair, y_t)
+
+        if (self.t in self.knotList):
+            #- estimate subspace
+            myX = self.X[[i[0] for i in self.arms],:]
+            myZ = self.Z[[i[1] for i in self.arms],:]
+            from matrixrecovery import rankone
+            U,V,out_nIter,stat = rankone(myX,myZ,np.array(self.rewards),self.r,self.R)
+            Th = U@V.T
+            U,S,VT = la.svd(Th)
+            V = VT.T
+            self.dbg_dict['out_nIter_list'].append( out_nIter )
+
+            #- rotate the arms
+            newX = self.X @ U
+            newZ = self.Z @ V
+
+            #- restart oful
+            d = self.d1 # FIXME just an impromptu
+            # T2 = self.T - self.t
+            self.lamp = self.T/d/self.r/np.log(1+self.T/self.lam) # different from TwoStage; I am using T instead of T2
+            term1 = np.sqrt(self.lam) * self.S_F #2 * np.sqrt(d*self.r)
+
+            if self.SpType == 'simple2':
+                term2pp = np.sqrt(self.lamp)  \
+                * self.R**2 * d**3 * self.r / self.t
+                self.Sp = term1 + self.sval_max * term2pp
+            elif self.SpType == 'simple3':
+                self.Sp = term1 
+            else:
+                raise ValueError()
+
+            k = self.r*(self.d1 + self.d2) - self.r**2
+            p = self.d1*self.d2
+            diagvec = [self.lam]*(self.r * self.d2)
+            row = [self.lam]*(self.r) + [self.lamp]*(self.d2 - self.r)
+            diagvec += row*(self.d1 - self.r)
+            self.D = np.diag(diagvec)                
+
+            #- initialize oful
+            self.oful = BilinearOful(X=newX, Z=newZ, 
+                                    lam=None, R=self.R, Sp=self.Sp, D=self.D,
+                                    flags={}, multiplier=self.multiplier)
+
+            #- pseudo play oful, so it is up to date!
+            for myt in range(self.t):
+                self.oful.update(self.arms[myt], self.rewards[myt])
+
+            pass
 
         self.t += 1
 
@@ -1073,9 +1292,6 @@ class LowPopArt_rankone(Bandit):
 
     def get_debug_dict(self):
         return self.dbg_dict
-
-
-
 
 ################################################################################
 # for experiments
