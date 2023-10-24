@@ -1,0 +1,6 @@
+myutils_cython.pyx
+setup.py
+myutils_cython.egg-info/PKG-INFO
+myutils_cython.egg-info/SOURCES.txt
+myutils_cython.egg-info/dependency_links.txt
+myutils_cython.egg-info/top_level.txt
